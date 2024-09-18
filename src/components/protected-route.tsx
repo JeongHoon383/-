@@ -1,6 +1,5 @@
 import { Navigate } from "react-router-dom";
 import { auth } from "../firebase";
-import Home from "../routes/home";
 
 export default function ProtectedRoute({
   children,
@@ -11,5 +10,5 @@ export default function ProtectedRoute({
   if (user === null) {
     return <Navigate to="/login" />;
   }
-  return <Home />;
+  return children;
 }

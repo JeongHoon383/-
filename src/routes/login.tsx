@@ -11,6 +11,7 @@ import {
   Title,
   Wrapper,
 } from "../components/auth-components";
+import GithubButton from "../components/github-btn";
 
 export default function CreateAccount() {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ export default function CreateAccount() {
           value={email}
           placeholder="Email"
           type="email"
+          autoComplete="email"
           required
         />
         <Input
@@ -62,6 +64,7 @@ export default function CreateAccount() {
           name="password"
           placeholder="Password"
           type="password"
+          autoComplete="current-password"
           required
         />
         <Input type="submit" value={isLoading ? "Loading..." : "Log in"} />
@@ -71,6 +74,7 @@ export default function CreateAccount() {
         Don't have an account!{" "}
         <Link to="/create-account">Create one &rarr;</Link>
       </Switcher>
+      <GithubButton />
     </Wrapper>
   );
 }
