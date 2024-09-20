@@ -12,30 +12,28 @@ import {
   Wrapper,
 } from "../components/auth-components";
 import GithubButton from "../components/github-btn";
+import { SubmitHandler, useForm } from "react-hook-form";
+
+interface FormData {
+  email: string;
+  password: string;
+}
 
 export default function CreateAccount() {
   const navigate = useNavigate();
   const [isLoading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>();
   const [error, setError] = useState("");
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {
-      target: { name, value },
-    } = e;
-    if (name === "email") {
-      setEmail(value);
-    } else if (name === "password") {
-      setPassword(value);
-    }
-  };
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
     setError("");
-    if (isLoading || email == "" || password === "") return;
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       navigate("/");
     } catch (e) {
       if (e instanceof FirebaseError) {
@@ -45,28 +43,25 @@ export default function CreateAccount() {
       setLoading(false);
     }
   };
+
   return (
     <Wrapper>
       <Title>Log into 𝕏</Title>
-      <Form onSubmit={onSubmit}>
+      <Form onSubmit={handleSubmit(onSubmit)}>
         <Input
-          onChange={onChange}
-          name="email"
-          value={email}
+          {...register("email", { required: "이메일은 필수입니다." })}
           placeholder="Email"
           type="email"
           autoComplete="email"
-          required
         />
+        {errors.email && <Error>{errors.email.message}</Error>}
         <Input
-          onChange={onChange}
-          value={password}
-          name="password"
+          {...register("password", { required: "비밀번호는 필수입니다." })}
           placeholder="Password"
           type="password"
           autoComplete="current-password"
-          required
         />
+        {errors.password && <Error>{errors.password.message}</Error>}
         <Input type="submit" value={isLoading ? "Loading..." : "Log in"} />
       </Form>
       {error !== "" ? <Error>{error}</Error> : null}
