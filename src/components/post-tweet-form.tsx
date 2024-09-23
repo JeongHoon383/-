@@ -89,16 +89,24 @@ export default function PostTweetForm() {
       });
       if (file) {
         const locationRef = ref(
+          // 해당 파일의 위치에 대한 ref를 받음
           storage,
           `tweets/${user.uid}-${user.displayName}/${doc.id}`
-          // doc.id 가 안나옴
+          // 파일이 존재한다면 업로드 된 파일명과 폴더명 지정
         );
         const result = await uploadBytes(locationRef, file);
+        // 파일 업로드(어디에 저장하고 싶은지, 파일)
         const url = await getDownloadURL(result.ref);
+        // 업로드한 파일의 url 반환 string 타입
+        // 왜 url을 반환? doc 에 이미지 url을 업데이트
         await updateDoc(doc, {
           photo: url,
         });
+        // doc에 첨부한 파일의 url 추가
       }
+      setTweet("");
+      setFile(null);
+      // 트윗 사진 리셋
     } catch (e) {
       console.log(e);
     } finally {
