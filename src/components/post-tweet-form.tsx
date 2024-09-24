@@ -67,12 +67,24 @@ export default function PostTweetForm() {
     setTweet(e.target.value);
   };
 
+  // 파일을 넣었을 때 감지
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     if (files && files.length === 1) {
-      setFile(files[0]);
+      const selectedFile = files[0];
+      if (selectedFile.size > 1024 * 1024) {
+        alert("파일 크기는 1MB 이하여야 합니다.");
+        setFile(null); // 파일이 1mb보다 크면 초기화
+      } else {
+        setFile(selectedFile); // 파일이 1mb 이하일 떄만 설정
+      }
     }
   };
+
+  // 1mb 미만의 파일만 업로드 할 수 있게
+  // 조건문으로 파일 크기가 1mb 이하라면 추가하게, 아니면 추가 못하게
+  // 1mb 를 어떻게 표현할까?
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
