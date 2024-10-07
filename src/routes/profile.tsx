@@ -1,8 +1,18 @@
 import { styled } from "styled-components";
-import { auth, storage } from "../firebase";
-import { useState } from "react";
+import { auth, db, storage } from "../firebase";
+import { useEffect, useState } from "react";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
+import {
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
+import { ITweet } from "../components/timeline";
+import Tweet from "../components/tweet";
 
 const Wrapper = styled.div`
   display: flex;
@@ -27,16 +37,36 @@ const AvatarUpload = styled.label`
 const AvatarImg = styled.img`
   width: 100%;
 `;
-const AvatarInput = styled.input`
+const Input = styled.input`
   display: none;
 `;
 const Name = styled.span`
   font-size: 22px;
+  text-align: center;
 `;
+
+const Button = styled.button`
+  width: 100%;
+`;
+
+const Tweets = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const EditWrapper = styled.div`
+  width: 100%;
+`;
+
+const EditInput = styled.input``;
 
 export default function Profile() {
   const user = auth.currentUser;
   const [avatar, setAvatar] = useState(user?.photoURL);
+  const [tweets, setTweets] = useState<ITweet[]>([]);
+  const [isEditing, setIsEditing] = useState(false); // 수정 모드 여부
+  const [newName, setNewName] = useState(user?.displayName || ""); // 새로운 이름 상태
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target; // input에 업로드한 files 가져오기
     if (!user) return;
@@ -50,6 +80,46 @@ export default function Profile() {
       await updateProfile(user, {
         photoURL: avatarUrl,
       });
+    }
+  };
+  const fetchTweets = async () => {
+    const tweetQuery = query(
+      collection(db, "hoon"),
+      where("userId", "==", user?.uid),
+      // 쿼리에 조건 설정, 조건에 맞게 데이터 조회
+      orderBy("createdAt", "desc"),
+      limit(25)
+    );
+    const snapshot = await getDocs(tweetQuery);
+    const tweets = snapshot.docs.map((doc) => {
+      const { tweet, createdAt, userId, username, photo } = doc.data();
+      return {
+        tweet,
+        createdAt,
+        userId,
+        username,
+        photo,
+        id: doc.id,
+      };
+    });
+    setTweets(tweets);
+  };
+  useEffect(() => {
+    fetchTweets();
+  }, []);
+
+  // 이름 변경 관련 상태
+
+  // 이름 변경 처리
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewName(e.target.value);
+  };
+
+  // 이름 업데이트 로직
+  const handleNameSubmit = async () => {
+    if (user && newName.trim()) {
+      await updateProfile(user, { displayName: newName });
+      setIsEditing(false); // 수정 모드 종료
     }
   };
 
@@ -69,13 +139,37 @@ export default function Profile() {
           </svg>
         )}
       </AvatarUpload>
-      <AvatarInput
+      <Input
         onChange={onAvatarChange}
         id="avatar"
         type="file"
         accept="image/*"
       />
-      <Name>{user?.displayName ?? "Anonymous"}</Name>
+      <Name>
+        {isEditing ? (
+          <EditWrapper>
+            <EditInput
+              id="EditInput"
+              type="text"
+              value={newName}
+              onChange={handleNameChange}
+              placeholder="새로운 이름을 입력하세요"
+            />
+            <Button onClick={handleNameSubmit}>이름 저장</Button>
+          </EditWrapper>
+        ) : (
+          <EditWrapper onClick={() => setIsEditing(true)}>
+            {user?.displayName ?? "Anonymous"}
+            <Button>이름 변경</Button>
+          </EditWrapper>
+        )}
+      </Name>
+
+      <Tweets>
+        {tweets.map((tweet) => (
+          <Tweet key={tweet.id} {...tweet} />
+        ))}
+      </Tweets>
     </Wrapper>
   );
 }
